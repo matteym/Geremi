@@ -13,11 +13,77 @@
 body {
   margin: 0;
   min-height: 100vh;
+  /* Fond chat subtil si l'utilisateur le veut */
   background: linear-gradient(135deg, #f8f5ec, #f3ebd8);
+}
+
+/* Image de fond pour le chat */
+section[class^="chat-wrapper"], section {
+  background-image: url('/chat-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+/* On ajoute un overlay blanc pour la lisibilité */
+section[class^="chat-wrapper"]::before, section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.90); /* Opacité forte pour ne voir que subtilement le fond */
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 16px;
+}
+
+/* On s'assure que le contenu passe au dessus de l'overlay */
+section > * {
+  position: relative;
+  z-index: 1;
 }
 
 a {
   color: inherit;
 }
 
+/* Animation Glow pour la Story non vue */
+@keyframes pulse-gold {
+  0% { box-shadow: 0 0 0 0 rgba(207, 169, 69, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(207, 169, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(207, 169, 69, 0); }
+}
 
+.story-glow {
+  animation: pulse-gold 2s infinite;
+}
+
+/* Ajustements Mobile */
+@media (max-width: 600px) {
+  section {
+    width: 100% !important;
+    height: 100dvh !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  /* Cache le scrollbar mais garde le scroll */
+  div[style*="overflowY: auto"] {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  div[style*="overflowY: auto"]::-webkit-scrollbar {
+    display: none;
+  }
+}
