@@ -4,7 +4,7 @@ import { loadIndex, semanticSearch } from "./rag.js";
 
 dotenv.config();
 
-const MODEL_NAME = process.env.GEMINI_MODEL || "models/gemini-2.5-flash";
+const MODEL_NAME = process.env.GEMINI_MODEL || "models/gemini-1.5-flash";
 const EMBED_MODEL = "models/text-embedding-004";
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
