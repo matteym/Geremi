@@ -34,7 +34,7 @@ section[class^="chat-wrapper"]::before, section::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.90); /* Opacité forte pour ne voir que subtilement le fond */
+  background: rgba(255, 255, 255, 0.85); /* Opacité ajustée pour mieux voir le fond */
   z-index: 0;
   pointer-events: none;
   border-radius: 16px;
