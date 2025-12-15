@@ -4,29 +4,36 @@
   color: #2b2115;
   background-color: #f8f5ec;
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  
+  /* Variables pour la hauteur dynamique (fix iOS) */
+  --app-height: 100dvh;
 }
 
 * {
   box-sizing: border-box;
+  /* Empêcher le highlight bleu au tap sur mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  /* Fond chat subtil si l'utilisateur le veut */
+  min-height: var(--app-height);
   background: linear-gradient(135deg, #f8f5ec, #f3ebd8);
+  /* Empêcher le bounce scroll global */
+  overscroll-behavior: none;
 }
 
 /* Image de fond pour le chat */
 section[class^="chat-wrapper"], section {
   background-image: url('/chat-bg.png');
-  background-size: cover;
+  background-size: cover; /* Cover est mieux pour remplir tout l'écran mobile sans répéter */
   background-position: center;
   background-repeat: no-repeat;
   position: relative;
 }
 
-/* On ajoute un overlay blanc pour la lisibilité */
+/* Overlay blanc */
 section[class^="chat-wrapper"]::before, section::before {
   content: "";
   position: absolute;
@@ -34,13 +41,12 @@ section[class^="chat-wrapper"]::before, section::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.85); /* Opacité ajustée pour mieux voir le fond */
+  background: rgba(255, 255, 255, 0.40); /* Un peu plus blanc pour lisibilité tout en gardant l'image */
   z-index: 0;
   pointer-events: none;
   border-radius: 16px;
 }
 
-/* On s'assure que le contenu passe au dessus de l'overlay */
 section > * {
   position: relative;
   z-index: 1;
@@ -50,10 +56,10 @@ a {
   color: inherit;
 }
 
-/* Animation Glow pour la Story non vue */
+/* Animation Glow pour la Story */
 @keyframes pulse-gold {
-  0% { box-shadow: 0 0 0 0 rgba(207, 169, 69, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(207, 169, 69, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(207, 169, 69, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(207, 169, 69, 0); }
   100% { box-shadow: 0 0 0 0 rgba(207, 169, 69, 0); }
 }
 
@@ -61,29 +67,87 @@ a {
   animation: pulse-gold 2s infinite;
 }
 
-/* Ajustements Mobile */
+/* ---------------- MOBILE FIRST OPTIMIZATIONS ---------------- */
+
 @media (max-width: 600px) {
+  /* Conteneur principal plein écran sans scroll global */
   section {
     width: 100% !important;
-    height: 100dvh !important;
+    height: 100vh !important;
+    height: 100dvh !important; /* Pour iOS Safari */
     border: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
     display: flex;
     flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom) !important; /* Espace pour la barre home */
   }
   
+  /* Header plus compact */
   header {
-    flex-direction: column;
-    text-align: center;
+    flex-direction: row !important; /* On garde en ligne pour gagner de la place hauteur */
+    align-items: center !important;
+    padding: 10px 15px !important;
+    gap: 15px !important;
+    background: rgba(255,255,255,0.6); /* Petit fond header pour lisibilité */
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
   }
 
-  /* Cache le scrollbar mais garde le scroll */
-  div[style*="overflowY: auto"] {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+  /* Ajustements typo header mobile */
+  header h2 {
+    font-size: 1.1rem !important;
+    margin-bottom: 2px !important;
   }
+  header p {
+    font-size: 0.8rem !important;
+    margin: 0 !important;
+  }
+
+  /* Zone de messages flexible */
+  div[style*="overflowY: auto"] {
+    flex: 1; /* Prend tout l'espace restant */
+    height: auto !important; 
+    min-height: 0 !important; /* Important pour le flex */
+    max-height: none !important;
+    padding: 15px !important;
+    
+    /* Scroll fluide et caché */
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
   div[style*="overflowY: auto"]::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Input Zone Fixe en bas */
+  form {
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(5px);
+    padding: 10px 15px calc(10px + env(safe-area-inset-bottom)) 15px !important;
+    margin-top: 0 !important;
+    border-top: 1px solid rgba(0,0,0,0.05);
+  }
+
+  /* Input : Pas de zoom (16px) et style arrondi */
+  input {
+    font-size: 16px !important; /* Empêche le zoom auto sur iPhone */
+    padding: 12px 16px !important;
+    border-radius: 25px !important;
+    background: #fff !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+
+  button[type="submit"] {
+    border-radius: 50% !important; /* Bouton rond type send icon si possible, sinon arrondi */
+    width: 45px;
+    height: 45px;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 45px;
   }
 }
