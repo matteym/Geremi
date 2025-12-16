@@ -103,8 +103,9 @@ export async function askQuestion(question, topic = "entrepreneurship") {
   const queryEmbedding = await embedQuery(question);
 
   // 2. Recherche sémantique dans le bon index
-  // On garde topK=12 pour avoir assez de matière
-  const top = semanticSearch(queryEmbedding, 12, safeTopic);
+  // On augmente drastiquement le topK (de 12 à 40) pour s'assurer qu'il a TOUT le contexte
+  // Gemini 1.5 Flash a une fenêtre de 1M tokens, donc aucun risque de surcharge.
+  const top = semanticSearch(queryEmbedding, 40, safeTopic);
 
   // 3. Construction du prompt
   const prompt = buildPrompt(question, top, safeTopic);
