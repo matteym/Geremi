@@ -172,42 +172,39 @@ form {
   .chat-sidebar {
     width: 100% !important;
     height: auto !important;
-    min-height: 90px;
+    min-height: 70px; /* Plus fin (était 90px) */
     flex-direction: row !important; /* Horizontal */
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 10px 15px !important;
+    padding: 8px 12px !important;
     border-right: none !important;
     border-bottom: 1px solid rgba(0,0,0,0.05);
-    background: rgba(255,255,255,0.6);
-    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85); /* Plus opaque */
+    backdrop-filter: blur(20px); /* Plus de flou */
     flex-shrink: 0;
+    z-index: 100; /* Au dessus des messages */
+    position: sticky; /* Reste en haut */
+    top: 0;
   }
 
   .chat-sidebar > div[style*="display: flex"] { /* Le wrapper content */
     flex-direction: row !important;
-    gap: 15px !important;
+    gap: 10px !important;
     align-items: center !important;
-  }
-
-  /* Cache le bouton clear history sur mobile pour gagner place (ou le réduit) */
-  .chat-sidebar button {
-    margin-top: 0 !important;
-    padding: 6px 10px !important;
-    font-size: 12px !important;
   }
 
   /* Force la taille du logo via CSS sur le conteneur */
   .logo-container {
-    width: 70px !important; 
-    height: 70px !important;
-    border-width: 3px !important;
+    width: 50px !important; /* Plus petit type story insta */
+    height: 50px !important;
+    border-width: 2px !important;
     padding: 2px !important;
   }
 
   /* Ajustements typo header mobile */
   .chat-sidebar h2 {
-    font-size: 1.2rem !important;
+    font-size: 1rem !important; /* Plus petit */
+    font-weight: 600 !important;
     margin: 0 !important;
     text-align: left !important;
   }
@@ -215,7 +212,8 @@ form {
   .chat-sidebar p { /* Badge & Subtitle */
     margin: 0 !important;
     text-align: left !important;
-    font-size: 0.9rem !important;
+    font-size: 0.8rem !important;
+    opacity: 0.7;
   }
 
   /* Cache badge sur mobile si trop serré */
