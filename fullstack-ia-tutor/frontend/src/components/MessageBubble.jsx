@@ -88,7 +88,7 @@ function MessageBubble({ role, text }) {
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = "fr-FR";
-    utterance.rate = 1.1; // Plus rapide et dynamique
+    utterance.rate = 1.5; // Plus rapide et dynamique
     utterance.pitch = 1.0; // Ton normal
 
     // Essayer de trouver une voix masculine française de qualité supérieure
