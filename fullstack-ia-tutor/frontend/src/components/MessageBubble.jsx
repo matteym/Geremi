@@ -93,13 +93,17 @@ function MessageBubble({ role, text }) {
 
     // Essayer de trouver une voix masculine française de qualité supérieure
     const voices = synth.getVoices();
-    // On cherche d'abord les voix "Google" (souvent meilleures) ou "Premium"
-    const bestVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Google") || v.name.includes("Premium") || v.name.includes("Enhanced")));
+    // On cherche d'abord spécifiquement "Google français" ou "Google French"
+    const googleVoice = voices.find(v => v.name.includes("Google") && (v.name.includes("français") || v.name.includes("Français") || v.name.includes("French")));
+    // Sinon une voix Premium/Enhanced
+    const premiumVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Premium") || v.name.includes("Enhanced")));
     // Sinon une voix masculine standard
     const maleVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Thomas") || v.name.includes("Male")));
     
-    if (bestVoice) {
-      utterance.voice = bestVoice;
+    if (googleVoice) {
+      utterance.voice = googleVoice;
+    } else if (premiumVoice) {
+      utterance.voice = premiumVoice;
     } else if (maleVoice) {
       utterance.voice = maleVoice;
     }
