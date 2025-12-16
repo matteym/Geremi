@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 
-function Logo({ size = 140 }) {
+function Logo({ size = 140, imageSrc = "/geremi.jpg" }) {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [viewed, setViewed] = useState(false);
 
@@ -20,39 +20,21 @@ function Logo({ size = 140 }) {
     setIsVideoOpen(false);
   };
 
-  const borderSize = Math.max(4, Math.round(size * 0.06));
   const ringColor = viewed ? "#e5e7eb" : "#cfa945"; // Gris si vu, Or si nouveau
 
   return (
     <>
       <div
         onClick={handleClick}
-        className={!viewed ? "story-glow" : ""}
+        className={`logo-container ${!viewed ? "story-glow" : ""}`}
         style={{
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          padding: "4px", // Espace entre le ring et l'image
-          border: `${borderSize}px solid ${ringColor}`,
-          cursor: "pointer",
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "all 0.3s ease",
+          "--logo-size": `${size}px`,
+          "--ring-color": ringColor,
         }}
       >
         <div
-          style={{
-            width: "100%",
-            height: "100%",
-            borderRadius: "50%",
-            overflow: "hidden",
-            backgroundImage: "url('/geremi.jpg')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            border: "2px solid #fff", // Petit bord blanc interne
-          }}
+          className="logo-image"
+          style={{ backgroundImage: `url('${imageSrc}')` }}
           aria-label="Geremi 0.3"
           role="img"
         />
