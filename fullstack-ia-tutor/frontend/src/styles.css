@@ -22,10 +22,16 @@ body {
   background: linear-gradient(135deg, #f8f5ec, #f3ebd8);
   /* Empêcher le bounce scroll global */
   overscroll-behavior: none;
+  
+  /* IMPORTANT POUR CLAVIER VIRTUEL MOBILE */
+  position: fixed; 
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Seul le contenu intérieur scroll */
 }
 
 /* Image de fond pour le chat */
-section[class^="chat-wrapper"], section {
+section[class*="chat-window-container"], section {
   background-image: url('/chat-bg.png');
   background-size: cover; /* Cover est mieux pour remplir tout l'écran mobile sans répéter */
   background-position: center;
@@ -34,7 +40,7 @@ section[class^="chat-wrapper"], section {
 }
 
 /* Overlay blanc */
-section[class^="chat-wrapper"]::before, section::before {
+section[class*="chat-window-container"]::before, section::before {
   content: "";
   position: absolute;
   top: 0;
@@ -67,11 +73,89 @@ a {
   animation: pulse-gold 2s infinite;
 }
 
-/* ---------------- MOBILE FIRST OPTIMIZATIONS ---------------- */
+/* Animation des points de suspension */
+@keyframes typing-dots {
+  0%, 20% { content: "."; }
+  40% { content: ".."; }
+  60%, 100% { content: "..."; }
+}
 
-@media (max-width: 600px) {
+.typing-dots::after {
+  content: "";
+  animation: typing-dots 1.5s infinite steps(1);
+}
+
+.typing-text {
+  font-size: 14px;
+  color: #6b7280; /* Gris */
+  font-style: italic;
+  font-weight: 500;
+  white-space: nowrap; /* Empêche le retour à la ligne pour stabiliser la largeur */
+}
+
+/* CSS pour le composant Logo refactorisé */
+.logo-container {
+  width: var(--logo-size, 140px);
+  height: var(--logo-size, 140px);
+  border-radius: 50%;
+  padding: 4px; /* Espace entre le ring et l'image */
+  border: 5px solid var(--ring-color, #cfa945); /* Bordure un peu plus épaisse par défaut */
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.logo-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background-image: url('/geremi.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 2px solid #fff; /* Petit bord blanc interne */
+}
+
+/* ---------------- DESKTOP DEFAULT STYLES (>= 768px) ---------------- */
+/* Layout Split View Sidebar + Main */
+
+.chat-window-container {
+  display: flex;
+  flex-direction: row;
+  height: 85vh;
+  max-height: 900px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.chat-sidebar {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+form {
+  position: relative; /* Normal flow */
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+/* ---------------- MOBILE FIRST OPTIMIZATIONS (< 768px) ---------------- */
+
+@media (max-width: 768px) {
   /* Conteneur principal plein écran sans scroll global */
-  section {
+  .chat-window-container {
     width: 100% !important;
     height: 100vh !important;
     height: 100dvh !important; /* Pour iOS Safari */
@@ -79,69 +163,128 @@ a {
     border-radius: 0 !important;
     margin: 0 !important;
     display: flex;
-    flex-direction: column;
-    padding-bottom: env(safe-area-inset-bottom) !important; /* Espace pour la barre home */
+    flex-direction: column !important; /* On repasse en colonne */
+    padding-bottom: 0 !important;
+    box-shadow: none !important;
   }
   
-  /* Header plus compact */
-  header {
-    flex-direction: row !important; /* On garde en ligne pour gagner de la place hauteur */
+  /* Sidebar devient Header */
+  .chat-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 90px;
+    flex-direction: row !important; /* Horizontal */
     align-items: center !important;
+    justify-content: space-between !important;
     padding: 10px 15px !important;
-    gap: 15px !important;
-    background: rgba(255,255,255,0.6); /* Petit fond header pour lisibilité */
-    backdrop-filter: blur(10px);
+    border-right: none !important;
     border-bottom: 1px solid rgba(0,0,0,0.05);
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+  }
+
+  .chat-sidebar > div[style*="display: flex"] { /* Le wrapper content */
+    flex-direction: row !important;
+    gap: 15px !important;
+    align-items: center !important;
+  }
+
+  /* Cache le bouton clear history sur mobile pour gagner place (ou le réduit) */
+  .chat-sidebar button {
+    margin-top: 0 !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* Force la taille du logo via CSS sur le conteneur */
+  .logo-container {
+    width: 70px !important; 
+    height: 70px !important;
+    border-width: 3px !important;
+    padding: 2px !important;
   }
 
   /* Ajustements typo header mobile */
-  header h2 {
-    font-size: 1.1rem !important;
-    margin-bottom: 2px !important;
-  }
-  header p {
-    font-size: 0.8rem !important;
+  .chat-sidebar h2 {
+    font-size: 1.2rem !important;
     margin: 0 !important;
+    text-align: left !important;
+  }
+  
+  .chat-sidebar p { /* Badge & Subtitle */
+    margin: 0 !important;
+    text-align: left !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Cache badge sur mobile si trop serré */
+  .chat-sidebar p[style*="background"] {
+    display: none !important;
+  }
+
+  /* Zone principale */
+  .chat-main-area {
+    width: 100% !important;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Zone de messages flexible */
-  div[style*="overflowY: auto"] {
+  .chat-main-area > div[style*="overflowY: auto"] {
     flex: 1; /* Prend tout l'espace restant */
     height: auto !important; 
     min-height: 0 !important; /* Important pour le flex */
-    max-height: none !important;
     padding: 15px !important;
-    
-    /* Scroll fluide et caché */
+    padding-bottom: 120px !important; 
     -webkit-overflow-scrolling: touch;
-    -ms-overflow-style: none;
     scrollbar-width: none;
   }
   
-  div[style*="overflowY: auto"]::-webkit-scrollbar {
+  .chat-main-area > div[style*="overflowY: auto"]::-webkit-scrollbar {
     display: none;
   }
 
-  /* Input Zone Fixe en bas */
+  /* Input Zone FIXED en bas pour solidité absolue sur MOBILE UNIQUEMENT */
   form {
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(5px);
-    padding: 10px 15px calc(10px + env(safe-area-inset-bottom)) 15px !important;
-    margin-top: 0 !important;
-    border-top: 1px solid rgba(0,0,0,0.05);
+    position: fixed !important;
+    bottom: 0;
+    left: 50%; /* Centré */
+    transform: translateX(-50%); /* Centré */
+    width: 100%;
+    max-width: 900px; 
+    z-index: 999;
+    
+    background: rgba(255,255,255,0.9) !important;
+    backdrop-filter: blur(10px);
+    padding: 10px 15px calc(15px + env(safe-area-inset-bottom)) 15px !important;
+    
+    border-top: 1px solid rgba(0,0,0,0.05) !important;
+    display: flex;
+    gap: 10px;
+    align-items: center;
   }
 
   /* Input : Pas de zoom (16px) et style arrondi */
   input {
+    flex: 1; /* Prend tout l'espace sauf le bouton */
     font-size: 16px !important; /* Empêche le zoom auto sur iPhone */
-    padding: 12px 16px !important;
-    border-radius: 25px !important;
+    padding: 12px 20px !important;
+    border-radius: 999px !important; /* Pill shape */
+    border: 1px solid rgba(0,0,0,0.1) !important;
     background: #fff !important;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    -webkit-appearance: none; /* Enlève les styles iOS par défaut */
+  }
+  
+  input:focus {
+    outline: none;
+    border-color: #cfa945 !important;
   }
 
   button[type="submit"] {
-    border-radius: 50% !important; /* Bouton rond type send icon si possible, sinon arrondi */
+    border-radius: 50% !important; /* Bouton rond */
     width: 45px;
     height: 45px;
     padding: 0 !important;
@@ -149,5 +292,8 @@ a {
     align-items: center;
     justify-content: center;
     min-width: 45px;
+    background: linear-gradient(135deg, #e6c97f, #cfa945) !important;
+    border: none !important;
+    box-shadow: 0 4px 10px rgba(207,169,69,0.3);
   }
 }

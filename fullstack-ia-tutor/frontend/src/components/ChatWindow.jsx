@@ -15,48 +15,33 @@ function ChatWindow() {
     ? "Bonjour. Je suis Bosher. Prêt à analyser les enjeux géopolitiques (BRICS, Énergie, etc.). Posez votre question."
     : "Alright ! Pose-moi tes questions sur le cours, je suis ready !";
 
-  // Clé unique pour le localStorage (ex: chat_history_geopo ou chat_history_entrepreneurship)
   const storageKey = `chat_history_${topic}`;
 
   const [messages, setMessages] = useState(() => {
-    // Tenter de récupérer l'historique depuis localStorage
     try {
       const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.warn("Erreur lecture historique", e);
-    }
+      if (saved) return JSON.parse(saved);
+    } catch (e) { console.warn("Erreur lecture historique", e); }
     return [{ role: "ai", text: initialMessage }];
   });
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const messagesEndRef = useRef(null); // Ref pour le scroll auto
-
-  // État pour le texte de chargement dynamique
+  const messagesEndRef = useRef(null);
   const [loadingText, setLoadingText] = useState("");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading]); // Scroll à chaque nouveau message ou loading
+  useEffect(() => { scrollToBottom(); }, [messages, loading]);
 
-  // Sauvegarder l'historique à chaque changement
   useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(messages));
-    } catch (e) {
-      console.warn("Erreur sauvegarde historique", e);
-    }
+    try { localStorage.setItem(storageKey, JSON.stringify(messages)); } 
+    catch (e) { console.warn("Erreur sauvegarde historique", e); }
   }, [messages, storageKey]);
 
-  // Gestion de l'animation du texte de chargement
   useEffect(() => {
     let interval;
     if (loading) {
@@ -68,7 +53,7 @@ function ChatWindow() {
               ? "suit la trame du cours, pas de paradoxes..." 
               : "Bosher est en train d'écrire..."
           );
-        }, 3000); // Change toutes les 3 secondes
+        }, 3000);
       } else {
         setLoadingText("Geremi pré-incube une réponse...");
       }
@@ -91,7 +76,7 @@ function ChatWindow() {
     try {
       const { data } = await ragApi.post("/ask", {
         question: trimmed,
-        topic: topic, // Envoi du topic au backend
+        topic: topic,
       });
 
       const replyText = data?.answer || "Pas de réponse disponible pour le moment.";
@@ -103,7 +88,6 @@ function ChatWindow() {
     }
   };
 
-  // Optionnel : un bouton pour effacer l'historique si ça devient trop long
   const clearHistory = () => {
     if (window.confirm("Effacer l'historique de cette conversation ?")) {
       const resetMsg = [{ role: "ai", text: initialMessage }];
@@ -113,11 +97,12 @@ function ChatWindow() {
   };
 
   return (
-    <section style={styles.wrapper} className="chat-wrapper">
-      <header style={styles.header}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <Logo size={90} imageSrc={isGeopo ? "/Bosher.png" : undefined} />
-          <div>
+    <section className="chat-window-container" style={styles.wrapper}>
+      {/* Sidebar Gauche (Desktop) / Header (Mobile) */}
+      <div className="chat-sidebar" style={styles.sidebar}>
+        <div style={styles.sidebarContent}>
+          <Logo size={isGeopo ? 120 : 120} imageSrc={isGeopo ? "/Bosher.png" : undefined} />
+          <div style={styles.agentInfo}>
             <p style={{...styles.badge, background: isGeopo ? "#dbeafe" : "#f1e3bd", color: isGeopo ? "#1e40af" : "#8a6a1c" }}>
               Accès validé
             </p>
@@ -126,147 +111,177 @@ function ChatWindow() {
           </div>
         </div>
         
-        {/* Petit bouton poubelle discret pour reset */}
         <button 
           onClick={clearHistory}
-          style={{ 
-            background: 'none', 
-            border: 'none', 
-            cursor: 'pointer', 
-            fontSize: '18px', 
-            opacity: 0.5,
-            marginLeft: 'auto' // Pousse le bouton à droite
-          }}
+          style={styles.clearButton}
           title="Effacer l'historique"
         >
-          🗑️
+          🗑️ Effacer historique
         </button>
-      </header>
-
-      <div style={styles.messages}>
-        {messages.map((msg, idx) => (
-          <MessageBubble key={idx} role={msg.role} text={msg.text} />
-        ))}
-        {loading && (
-          <MessageBubble 
-            role="ai" 
-            text={<span className="typing-text">{loadingText}<span className="typing-dots"></span></span>} 
-          />
-        )}
-        {/* Élément invisible pour scroller en bas + Espace pour ne pas être caché par le footer */}
-        <div ref={messagesEndRef} style={{ height: "20px" }} />
       </div>
 
-      <form onSubmit={handleSend} style={styles.footer}>
-        <input
-          style={styles.input}
-          placeholder={isGeopo ? "Posez une question de géopolitique..." : "Pose ta question..."}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button 
-          style={{...styles.button, background: isGeopo ? "linear-gradient(135deg, #a8d0e6, #5d9cec)" : "linear-gradient(135deg, #e6c97f, #cfa945)", borderColor: isGeopo ? "#5d9cec" : "#cfa945"}}
-          type="submit" 
-          disabled={loading}
-          aria-label="Envoyer"
-        >
-          {loading ? "..." : "➤"}
-        </button>
-      </form>
+      {/* Zone principale Droite (Desktop) / Bas (Mobile) */}
+      <div className="chat-main-area" style={styles.mainArea}>
+        <div style={styles.messages}>
+          {messages.map((msg, idx) => (
+            <MessageBubble key={idx} role={msg.role} text={msg.text} />
+          ))}
+          {loading && (
+            <MessageBubble 
+              role="ai" 
+              text={<span className="typing-text">{loadingText}<span className="typing-dots"></span></span>} 
+            />
+          )}
+          <div ref={messagesEndRef} style={{ height: "20px" }} />
+        </div>
 
-      {error && <p style={styles.error}>{error}</p>}
+        <form onSubmit={handleSend} style={styles.footer}>
+          <input
+            style={styles.input}
+            placeholder={isGeopo ? "Posez une question de géopolitique..." : "Pose ta question..."}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <button 
+            style={{...styles.button, background: isGeopo ? "linear-gradient(135deg, #a8d0e6, #5d9cec)" : "linear-gradient(135deg, #e6c97f, #cfa945)", borderColor: isGeopo ? "#5d9cec" : "#cfa945"}}
+            type="submit" 
+            disabled={loading}
+            aria-label="Envoyer"
+          >
+            {loading ? "..." : "➤"}
+          </button>
+        </form>
+        {error && <p style={styles.error}>{error}</p>}
+      </div>
     </section>
   );
 }
 
 const styles = {
   wrapper: {
-    maxWidth: "900px",
+    maxWidth: "1200px", // Plus large sur desktop pour accommoder la sidebar
     margin: "0 auto",
     background: "#ffffff",
-    border: "1px solid #e6ddc4",
+    // border: "1px solid #e6ddc4", // On gère les bordures en CSS responsive
     borderRadius: "16px",
-    padding: "18px",
     boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+    height: "85vh",
+    maxHeight: "900px",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "row", // Par défaut Desktop : Row
+  },
+  // Colonne Gauche
+  sidebar: {
+    width: "300px",
+    background: "#fdfbf7",
+    borderRight: "1px solid #e6ddc4",
+    padding: "30px 20px",
     display: "flex",
     flexDirection: "column",
-    height: "80vh", // Hauteur fixe sur desktop pour permettre le scroll interne
-    maxHeight: "800px", // Limite max confortable
-    overflow: "hidden", // Empêche le wrapper de grandir au-delà de sa hauteur définie
-    position: "relative", // Pour le positionnement absolu si besoin
-  },
-  header: {
-    padding: "12px 12px 10px",
-    borderBottom: "1px solid #e6ddc4",
-    marginBottom: "12px",
-    display: "flex",
-    gap: "12px",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "space-between", // Pour placer le bouton delete à droite
+    textAlign: "center",
+  },
+  sidebarContent: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "20px",
+  },
+  agentInfo: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  // Zone Droite
+  mainArea: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    background: "#fff",
+    position: "relative",
   },
   badge: {
     display: "inline-block",
-    padding: "4px 10px",
+    padding: "6px 12px",
     borderRadius: "999px",
     background: "#f1e3bd",
     color: "#8a6a1c",
     fontWeight: 700,
     fontSize: "12px",
-    marginBottom: "6px",
+    marginBottom: "10px",
   },
   title: {
     margin: "0",
     color: "#2b2115",
-    fontSize: "20px",
+    fontSize: "24px",
+    fontWeight: "800",
   },
   subtitle: {
-    margin: "4px 0 0",
+    margin: "6px 0 0",
     color: "#574834",
     fontSize: "14px",
   },
   messages: {
-    flex: 1, // Prend tout l'espace disponible
+    flex: 1,
     overflowY: "auto",
-    minHeight: 0, // CRUCIAL : permet au flex item de rétrécir et de scroller
-    padding: "12px",
+    minHeight: 0,
+    padding: "20px 30px", // Plus d'espace sur desktop
     display: "flex",
     flexDirection: "column",
-    gap: "10px",
+    gap: "16px",
   },
   footer: {
     display: "flex",
-    gap: "10px",
-    marginTop: "12px",
+    gap: "12px",
+    padding: "20px 30px",
+    borderTop: "1px solid #f0f0f0",
     alignItems: "center",
+    background: "#fff",
   },
   input: {
     flex: 1,
-    padding: "12px 16px",
-    borderRadius: "24px",
+    padding: "16px 20px",
+    borderRadius: "99px",
     border: "1px solid #e6ddc4",
     background: "#f8f5ec",
     color: "#2b2115",
-    fontSize: "16px", // Bloque le zoom iOS
+    fontSize: "16px",
+    outline: "none",
   },
   button: {
-    padding: "12px",
-    width: "48px",
-    height: "48px",
-    borderRadius: "50%", // Rond
+    padding: "0",
+    width: "54px",
+    height: "54px",
+    borderRadius: "50%",
     border: "1px solid #cfa945",
     background: "linear-gradient(135deg, #e6c97f, #cfa945)",
     color: "#2b2115",
     fontWeight: 700,
     cursor: "pointer",
-    boxShadow: "0 10px 25px rgba(207,169,69,0.3)",
+    boxShadow: "0 4px 15px rgba(207,169,69,0.3)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "18px",
+    fontSize: "20px",
+    transition: "transform 0.2s",
+  },
+  clearButton: {
+    background: "transparent",
+    border: "1px solid #e6ddc4",
+    borderRadius: "8px",
+    padding: "8px 16px",
+    fontSize: "13px",
+    color: "#888",
+    cursor: "pointer",
+    marginTop: "20px",
   },
   error: {
     color: "#c0392b",
     marginTop: "10px",
+    textAlign: "center",
+    fontSize: "14px",
   },
 };
 
