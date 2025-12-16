@@ -115,7 +115,7 @@ function MessageBubble({ role, text }) {
 
       const utterance = new SpeechSynthesisUtterance(sentenceText);
       utterance.lang = "fr-FR";
-      utterance.rate = 1.5; 
+      utterance.rate = 1.1; // Plus naturel (était 1.5)
       utterance.pitch = 1.0;
 
       // Choix de la voix (le même qu'avant)
