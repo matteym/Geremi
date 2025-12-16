@@ -91,11 +91,17 @@ function MessageBubble({ role, text }) {
     utterance.rate = 1.1; // Plus rapide et dynamique
     utterance.pitch = 1.0; // Ton normal
 
-    // Essayer de trouver une voix masculine française si possible
+    // Essayer de trouver une voix masculine française de qualité supérieure
     const voices = synth.getVoices();
-    const frenchMaleVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Google") || v.name.includes("Thomas"))); 
-    if (frenchMaleVoice) {
-      utterance.voice = frenchMaleVoice;
+    // On cherche d'abord les voix "Google" (souvent meilleures) ou "Premium"
+    const bestVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Google") || v.name.includes("Premium") || v.name.includes("Enhanced")));
+    // Sinon une voix masculine standard
+    const maleVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Thomas") || v.name.includes("Male")));
+    
+    if (bestVoice) {
+      utterance.voice = bestVoice;
+    } else if (maleVoice) {
+      utterance.voice = maleVoice;
     }
 
     utterance.onend = () => {
