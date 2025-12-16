@@ -10,7 +10,7 @@ function formatText(text) {
       return (
         <h3
           key={idx}
-          style={{ margin: "12px 0 6px", fontSize: "16px", fontWeight: "700" }}
+          style={{ margin: "14px 0 8px", fontSize: "19px", fontWeight: "700" }}
         >
           {parseInline(line.replace("### ", ""))}
         </h3>
@@ -30,7 +30,7 @@ function formatText(text) {
     }
     // Paragraphe normal
     return (
-      <p key={idx} style={{ margin: "0 0 4px", lineHeight: "1.5" }}>
+      <p key={idx} style={{ margin: "0 0 6px", lineHeight: "1.6" }}>
         {parseInline(line)}
       </p>
     );
@@ -71,13 +71,16 @@ function MessageBubble({ role, text }) {
           boxShadow: isUser
             ? "0 8px 18px rgba(207,169,69,0.25)"
             : "0 4px 12px rgba(0,0,0,0.05)",
-          fontSize: "15px",
+          fontSize: "17px",
         }}
       >
-        {isUser ? (
+        {/* Si c'est du JSX (React Element) ou si ce n'est pas une string, on l'affiche direct */}
+        {React.isValidElement(text) ? (
+          <div>{text}</div>
+        ) : isUser ? (
           <p style={{ margin: 0 }}>{text}</p>
         ) : (
-          <div>{formatText(text)}</div>
+          <div>{formatText(String(text))}</div>
         )}
       </div>
     </div>
