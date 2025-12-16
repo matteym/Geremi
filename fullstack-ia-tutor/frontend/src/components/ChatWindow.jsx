@@ -15,9 +15,22 @@ function ChatWindow() {
     ? "Bonjour. Je suis Bosher. Prêt à analyser les enjeux géopolitiques (BRICS, Énergie, etc.). Posez votre question."
     : "Alright ! Pose-moi tes questions sur le cours, je suis ready !";
 
-  const [messages, setMessages] = useState([
-    { role: "ai", text: initialMessage },
-  ]);
+  // Clé unique pour le localStorage (ex: chat_history_geopo ou chat_history_entrepreneurship)
+  const storageKey = `chat_history_${topic}`;
+
+  const [messages, setMessages] = useState(() => {
+    // Tenter de récupérer l'historique depuis localStorage
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn("Erreur lecture historique", e);
+    }
+    return [{ role: "ai", text: initialMessage }];
+  });
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -33,6 +46,15 @@ function ChatWindow() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, loading]); // Scroll à chaque nouveau message ou loading
+
+  // Sauvegarder l'historique à chaque changement
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    } catch (e) {
+      console.warn("Erreur sauvegarde historique", e);
+    }
+  }, [messages, storageKey]);
 
   // Gestion de l'animation du texte de chargement
   useEffect(() => {
@@ -81,17 +103,44 @@ function ChatWindow() {
     }
   };
 
+  // Optionnel : un bouton pour effacer l'historique si ça devient trop long
+  const clearHistory = () => {
+    if (window.confirm("Effacer l'historique de cette conversation ?")) {
+      const resetMsg = [{ role: "ai", text: initialMessage }];
+      setMessages(resetMsg);
+      localStorage.setItem(storageKey, JSON.stringify(resetMsg));
+    }
+  };
+
   return (
     <section style={styles.wrapper} className="chat-wrapper">
       <header style={styles.header}>
-        <Logo size={90} imageSrc={isGeopo ? "/Bosher.jpg" : undefined} />
-        <div>
-          <p style={{...styles.badge, background: isGeopo ? "#dbeafe" : "#f1e3bd", color: isGeopo ? "#1e40af" : "#8a6a1c" }}>
-            Accès validé
-          </p>
-          <h2 style={styles.title}>{agentName}</h2>
-          <p style={styles.subtitle}>{agentSubtitle}</p>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <Logo size={90} imageSrc={isGeopo ? "/Bosher.jpg" : undefined} />
+          <div>
+            <p style={{...styles.badge, background: isGeopo ? "#dbeafe" : "#f1e3bd", color: isGeopo ? "#1e40af" : "#8a6a1c" }}>
+              Accès validé
+            </p>
+            <h2 style={styles.title}>{agentName}</h2>
+            <p style={styles.subtitle}>{agentSubtitle}</p>
+          </div>
         </div>
+        
+        {/* Petit bouton poubelle discret pour reset */}
+        <button 
+          onClick={clearHistory}
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            cursor: 'pointer', 
+            fontSize: '18px', 
+            opacity: 0.5,
+            marginLeft: 'auto' // Pousse le bouton à droite
+          }}
+          title="Effacer l'historique"
+        >
+          🗑️
+        </button>
       </header>
 
       <div style={styles.messages}>
@@ -153,6 +202,7 @@ const styles = {
     display: "flex",
     gap: "12px",
     alignItems: "center",
+    justifyContent: "space-between", // Pour placer le bouton delete à droite
   },
   badge: {
     display: "inline-block",
