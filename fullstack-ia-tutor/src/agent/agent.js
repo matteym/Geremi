@@ -53,7 +53,7 @@ RÈGLES IMPORTANTES :
 `.trim();
 }
 
-function buildPrompt(question, contexts, topic) {
+function buildPrompt(question, contexts, topic, history = []) {
   const ctx = contexts
     .map(
       (c, idx) =>
@@ -63,14 +63,24 @@ function buildPrompt(question, contexts, topic) {
 
   const systemInstruction = getSystemPrompt(topic);
 
+  // Formatage de l'historique pour le prompt
+  let conversationHistory = "";
+  if (history.length > 0) {
+    conversationHistory = "\nHISTORIQUE RÉCENT DE LA CONVERSATION :\n" + 
+      history.map(h => `${h.role === "model" ? "AI" : "USER"}: ${h.parts[0].text}`).join("\n") + 
+      "\n";
+  }
+
   return `
 ${systemInstruction}
 
-USER:
-Question: ${question}
+${conversationHistory}
 
-Contexte extrait des cours (${topic}) :
+CONTEXTE DOCUMENTAIRE EXTRAIT (${topic}) :
 ${ctx}
+
+USER (Nouvelle question):
+${question}
 `.trim();
 }
 
@@ -90,8 +100,9 @@ async function embedQuery(text) {
  * Pose une question au RAG sur un topic donné.
  * @param {string} question - La question de l'utilisateur
  * @param {string} topic - "entrepreneurship" (défaut) ou "geopo"
+ * @param {Array} history - Historique des messages (optionnel)
  */
-export async function askQuestion(question, topic = "entrepreneurship") {
+export async function askQuestion(question, topic = "entrepreneurship", history = []) {
   if (!question || !question.trim()) {
     throw new Error("Question manquante");
   }
@@ -108,8 +119,8 @@ export async function askQuestion(question, topic = "entrepreneurship") {
   // Gemini 1.5 Flash a une fenêtre de 1M tokens, donc aucun risque de surcharge.
   const top = semanticSearch(queryEmbedding, 40, safeTopic);
 
-  // 3. Construction du prompt
-  const prompt = buildPrompt(question, top, safeTopic);
+  // 3. Construction du prompt avec historique
+  const prompt = buildPrompt(question, top, safeTopic, history);
 
   // 4. Appel à Gemini
   // Retry logic basique pour gérer les 503

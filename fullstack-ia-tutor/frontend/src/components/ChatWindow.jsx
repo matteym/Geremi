@@ -74,9 +74,16 @@ function ChatWindow() {
     setInput("");
 
     try {
+      // On envoie les 10 derniers messages pour le contexte
+      const historyToSend = messages.slice(-10).map(m => ({
+        role: m.role === "ai" ? "model" : "user", // Gemini utilise "model" et non "ai"
+        parts: [{ text: m.text }]
+      }));
+
       const { data } = await ragApi.post("/ask", {
         question: trimmed,
         topic: topic,
+        history: historyToSend // Ajout de l'historique
       });
 
       const replyText = data?.answer || "Pas de réponse disponible pour le moment.";
