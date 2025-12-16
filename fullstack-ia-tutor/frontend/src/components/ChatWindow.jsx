@@ -116,7 +116,7 @@ function ChatWindow() {
     <section style={styles.wrapper} className="chat-wrapper">
       <header style={styles.header}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <Logo size={90} imageSrc={isGeopo ? "/Bosher.jpg" : undefined} />
+          <Logo size={90} imageSrc={isGeopo ? "/Bosher.png" : undefined} />
           <div>
             <p style={{...styles.badge, background: isGeopo ? "#dbeafe" : "#f1e3bd", color: isGeopo ? "#1e40af" : "#8a6a1c" }}>
               Accès validé
