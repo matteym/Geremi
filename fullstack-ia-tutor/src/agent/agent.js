@@ -35,6 +35,22 @@ RÈGLES IMPORTANTES :
 `.trim();
   }
 
+  if (topic === "eco") {
+    return `
+SYSTEM:
+Tu es "JP", un expert en Économie (Macro & Micro), spécialisé dans les cours de BBA.
+Ton style est pragmatique, chiffré et orienté vers la compréhension des mécanismes économiques.
+Tu t’appuies STRICTEMENT sur les documents PDF fournis (Offre/Demande, Marchés, PIB, Inflation, etc.).
+Tu n’inventes rien. Si l'info n'est pas dans le contexte, dis-le clairement.
+
+RÈGLES IMPORTANTES :
+1. Explique les concepts économiques avec des exemples concrets si possible.
+2. Si tu vois des données chiffrées dans le contexte, utilise-les pour justifier tes explications.
+3. Ton ton est professionnel mais pédagogue, comme un professeur d'économie passionné.
+4. N'hésite pas à faire des liens entre les différents chapitres si pertinent.
+`.trim();
+  }
+
   // Par défaut : entrepreneurship (Geremi)
   return `
 SYSTEM:
@@ -108,7 +124,7 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
   }
 
   // Petit nettoyage du topic pour éviter les injections bizarres, fallback sur entrepreneurship si inconnu
-  const validTopics = ["entrepreneurship", "geopo"];
+  const validTopics = ["entrepreneurship", "geopo", "eco"];
   const safeTopic = validTopics.includes(topic) ? topic : "entrepreneurship";
 
   // 1. Embedding de la question

@@ -7,13 +7,45 @@ import Logo from "./Logo.jsx";
 function ChatWindow() {
   const location = useLocation();
   const topic = location.state?.topic || "entrepreneurship";
+  
   const isGeopo = topic === "geopo";
+  const isEco = topic === "eco";
 
-  const agentName = isGeopo ? "Bosher" : "Geremi 0.3";
-  const agentSubtitle = isGeopo ? "Expert en Géopolitique" : "Votre tuteur IA";
-  const initialMessage = isGeopo 
-    ? "Bonjour. Je suis Bosher. Prêt à analyser les enjeux géopolitiques (BRICS, Énergie, etc.). Posez votre question."
-    : "Alright ! Pose-moi tes questions sur le cours, je suis ready !";
+  // Configuration dynamique selon l'agent
+  let agentName = "Geremi 0.3";
+  let agentSubtitle = "Votre tuteur IA";
+  let initialMessage = "Alright ! Pose-moi tes questions sur le cours, je suis ready !";
+  let logoSrc = undefined; // Par défaut Geremi (géré dans Logo.jsx)
+  let badgeColor = { bg: "#f1e3bd", text: "#8a6a1c" };
+  let themeColor = {
+    buttonBg: "linear-gradient(135deg, #e6c97f, #cfa945)",
+    buttonBorder: "#cfa945",
+    inputPlaceholder: "Pose ta question..."
+  };
+
+  if (isGeopo) {
+    agentName = "Bosher";
+    agentSubtitle = "Expert en Géopolitique";
+    initialMessage = "Bonjour. Je suis Bosher. Prêt à analyser les enjeux géopolitiques (BRICS, Énergie, etc.). Posez votre question.";
+    logoSrc = "/Bosher.png";
+    badgeColor = { bg: "#dbeafe", text: "#1e40af" }; // Bleu
+    themeColor = {
+      buttonBg: "linear-gradient(135deg, #a8d0e6, #5d9cec)",
+      buttonBorder: "#5d9cec",
+      inputPlaceholder: "Posez une question de géopolitique..."
+    };
+  } else if (isEco) {
+    agentName = "JP";
+    agentSubtitle = "Expert en Économie";
+    initialMessage = "Bonjour, ici JP. Offre, demande, inflation... Quel concept économique souhaitez-vous approfondir ?";
+    logoSrc = "/JP.webp";
+    badgeColor = { bg: "#dcfce7", text: "#166534" }; // Vert
+    themeColor = {
+      buttonBg: "linear-gradient(135deg, #86efac, #22c55e)",
+      buttonBorder: "#22c55e",
+      inputPlaceholder: "Une question sur l'économie ?"
+    };
+  }
 
   const storageKey = `chat_history_${topic}`;
 
@@ -54,6 +86,15 @@ function ChatWindow() {
               : "Bosher est en train d'écrire..."
           );
         }, 3000);
+      } else if (isEco) {
+        setLoadingText("JP analyse les marchés...");
+        interval = setInterval(() => {
+          setLoadingText((prev) => 
+            prev === "JP analyse les marchés..." 
+              ? "calcule le PIB..." 
+              : "JP analyse les marchés..."
+          );
+        }, 3000);
       } else {
         setLoadingText("Geremi pré-incube une réponse...");
       }
@@ -61,7 +102,7 @@ function ChatWindow() {
       setLoadingText("");
     }
     return () => clearInterval(interval);
-  }, [loading, isGeopo]);
+  }, [loading, isGeopo, isEco]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -74,16 +115,15 @@ function ChatWindow() {
     setInput("");
 
     try {
-      // On envoie les 10 derniers messages pour le contexte
       const historyToSend = messages.slice(-10).map(m => ({
-        role: m.role === "ai" ? "model" : "user", // Gemini utilise "model" et non "ai"
+        role: m.role === "ai" ? "model" : "user",
         parts: [{ text: m.text }]
       }));
 
       const { data } = await ragApi.post("/ask", {
         question: trimmed,
         topic: topic,
-        history: historyToSend // Ajout de l'historique
+        history: historyToSend
       });
 
       const replyText = data?.answer || "Pas de réponse disponible pour le moment.";
@@ -108,9 +148,9 @@ function ChatWindow() {
       {/* Sidebar Gauche (Desktop) / Header (Mobile) */}
       <div className="chat-sidebar" style={styles.sidebar}>
         <div style={styles.sidebarContent}>
-          <Logo size={isGeopo ? 120 : 120} imageSrc={isGeopo ? "/Bosher.png" : undefined} />
+          <Logo size={120} imageSrc={logoSrc} />
           <div style={styles.agentInfo}>
-            <p style={{...styles.badge, background: isGeopo ? "#dbeafe" : "#f1e3bd", color: isGeopo ? "#1e40af" : "#8a6a1c" }}>
+            <p style={{...styles.badge, background: badgeColor.bg, color: badgeColor.text }}>
               Accès validé
             </p>
             <h2 style={styles.title}>{agentName}</h2>
@@ -145,12 +185,12 @@ function ChatWindow() {
         <form onSubmit={handleSend} style={styles.footer}>
           <input
             style={styles.input}
-            placeholder={isGeopo ? "Posez une question de géopolitique..." : "Pose ta question..."}
+            placeholder={themeColor.inputPlaceholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
           <button 
-            style={{...styles.button, background: isGeopo ? "linear-gradient(135deg, #a8d0e6, #5d9cec)" : "linear-gradient(135deg, #e6c97f, #cfa945)", borderColor: isGeopo ? "#5d9cec" : "#cfa945"}}
+            style={{...styles.button, background: themeColor.buttonBg, borderColor: themeColor.buttonBorder}}
             type="submit" 
             disabled={loading}
             aria-label="Envoyer"
@@ -166,19 +206,17 @@ function ChatWindow() {
 
 const styles = {
   wrapper: {
-    maxWidth: "1200px", // Plus large sur desktop pour accommoder la sidebar
+    maxWidth: "1200px",
     margin: "0 auto",
     background: "#ffffff",
-    // border: "1px solid #e6ddc4", // On gère les bordures en CSS responsive
     borderRadius: "16px",
     boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
     height: "85vh",
     maxHeight: "900px",
     overflow: "hidden",
     display: "flex",
-    flexDirection: "row", // Par défaut Desktop : Row
+    flexDirection: "row",
   },
-  // Colonne Gauche
   sidebar: {
     width: "300px",
     background: "#fdfbf7",
@@ -201,7 +239,6 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
   },
-  // Zone Droite
   mainArea: {
     flex: 1,
     display: "flex",
@@ -213,8 +250,6 @@ const styles = {
     display: "inline-block",
     padding: "6px 12px",
     borderRadius: "999px",
-    background: "#f1e3bd",
-    color: "#8a6a1c",
     fontWeight: 700,
     fontSize: "12px",
     marginBottom: "10px",
@@ -234,7 +269,7 @@ const styles = {
     flex: 1,
     overflowY: "auto",
     minHeight: 0,
-    padding: "20px 30px", // Plus d'espace sur desktop
+    padding: "20px 30px",
     display: "flex",
     flexDirection: "column",
     gap: "16px",
@@ -263,7 +298,6 @@ const styles = {
     height: "54px",
     borderRadius: "50%",
     border: "1px solid #cfa945",
-    background: "linear-gradient(135deg, #e6c97f, #cfa945)",
     color: "#2b2115",
     fontWeight: 700,
     cursor: "pointer",

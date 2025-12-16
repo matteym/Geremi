@@ -127,14 +127,16 @@ async function build() {
 
   await fs.ensureDir(vectorsDir);
 
-  // Détecter les sous-dossiers dans assets/cours
+  // Détecter les sous-dossiers dans assets/cours (geopo, entrepreneurship, eco...)
   const entries = await fs.readdir(pdfBaseDir, { withFileTypes: true });
   const directories = entries.filter(dirent => dirent.isDirectory()).map(dirent => dirent.name);
 
   if (directories.length === 0) {
-    console.warn("⚠️ Aucun sous-dossier trouvé dans assets/cours. Veuillez organiser les PDF par matière (ex: entrepreneurship/, geopo/).");
-    // Fallback: Si des PDF sont à la racine, on pourrait les traiter comme 'default' ou 'entrepreneurship' par défaut ?
-    // Pour l'instant, on suppose que l'utilisateur a suivi la consigne.
+    // Si aucun sous-dossier, on essaye de traiter la racine comme un dossier par défaut ou on avertit
+    console.warn("⚠️ Aucun sous-dossier trouvé. Création des dossiers par défaut si besoin.");
+  } else {
+    // On ajoute explicitement 'eco' s'il n'est pas détecté (par sécurité) ou on laisse la détection auto
+    console.log("Dossiers détectés :", directories.join(", "));
   }
 
   for (const dir of directories) {

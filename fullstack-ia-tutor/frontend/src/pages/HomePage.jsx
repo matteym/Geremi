@@ -45,6 +45,15 @@ function HomePage() {
             >
               Géopolitique (Bosher)
             </Link>
+
+            <Link 
+              to="/chat" 
+              state={{ topic: "eco" }} 
+              style={styles.ecoButton} 
+              onClick={handleDegusterClick}
+            >
+              Économie (JP)
+            </Link>
           </div>
           
           <p style={styles.counterText}>
@@ -135,14 +144,29 @@ const styles = {
     display: "block",
     width: "100%",
     padding: "16px 24px",
-    background: "linear-gradient(135deg, #e6e9f0, #eef1f5)",
-    color: "#4b5563",
+    background: "linear-gradient(135deg, #dbeafe, #bfdbfe)",
+    color: "#1e3a8a",
     borderRadius: "99px",
     textDecoration: "none",
     fontWeight: 700,
     fontSize: "18px",
-    border: "1px solid #d1d5db",
-    boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
+    border: "1px solid #93c5fd",
+    boxShadow: "0 5px 15px rgba(59,130,246,0.15)",
+    textAlign: "center",
+    transition: "transform 0.2s",
+  },
+  ecoButton: {
+    display: "block",
+    width: "100%",
+    padding: "16px 24px",
+    background: "linear-gradient(135deg, #dcfce7, #86efac)",
+    color: "#14532d",
+    borderRadius: "99px",
+    textDecoration: "none",
+    fontWeight: 700,
+    fontSize: "18px",
+    border: "1px solid #86efac",
+    boxShadow: "0 5px 15px rgba(34,197,94,0.15)",
     textAlign: "center",
     transition: "transform 0.2s",
   },
