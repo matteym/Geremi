@@ -26,14 +26,16 @@ export default async function handler(req, res) {
 
   // Route /ask
   if (url.includes("/ask") && method === "POST") {
-    const { question } = req.body || {};
+    const { question, topic } = req.body || {};
     
     if (!question) {
       return res.status(400).json({ error: "Question manquante" });
     }
 
     try {
-      const result = await askQuestion(question);
+      // On passe le topic (entrepreneurship ou geopo) à l'agent
+      // Si topic est undefined, l'agent utilisera la valeur par défaut
+      const result = await askQuestion(question, topic);
       return res.json(result);
     } catch (error) {
       console.error("Erreur /ask:", error);

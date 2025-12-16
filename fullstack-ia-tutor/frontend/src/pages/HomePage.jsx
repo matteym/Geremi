@@ -1,26 +1,55 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Logo from "../components/Logo.jsx";
 
 function HomePage() {
+  const [clickCount, setClickCount] = useState(() => {
+    return parseInt(localStorage.getItem("deguster_count") || "124", 10);
+  });
+
+  const handleDegusterClick = () => {
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+    localStorage.setItem("deguster_count", newCount.toString());
+  };
+
   return (
     <main style={styles.container}>
       <section style={styles.card}>
-        <div style={styles.logoRow}>
-          <Logo size={110} />
-          <div>
-            <p style={styles.badge}>Accès illimité</p>
-            <h1 style={styles.title}>Geremi 0.3, votre tuteur IA</h1>
+        <div style={styles.contentColumn}>
+          <Logo size={180} />
+          
+          <div style={styles.textCenter}>
+            <h1 style={styles.title}>Geremi 0.3</h1>
+            <p style={styles.subtitleSmall}>Votre tuteur IA</p>
+            <p style={styles.description}>
+              Spécialisé dans le cours de BBA2 Entrepreneurship
+            </p>
           </div>
-        </div>
-        <p style={styles.subtitle}>
-          Payez une seule fois, débloquez l'accès au chatbot IA spécialisé et posez toutes vos questions
-          en illimité.
-        </p>
-        <div style={styles.actions}>
-          <Link to="/chat" style={styles.primary}>
-            Accéder au chat (Gratuit)
-          </Link>
+
+          <div style={styles.actions}>
+            <Link 
+              to="/chat" 
+              state={{ topic: "entrepreneurship" }} 
+              style={styles.primary} 
+              onClick={handleDegusterClick}
+            >
+              Entrepreneuriat (Geremi)
+            </Link>
+
+            <Link 
+              to="/chat" 
+              state={{ topic: "geopo" }} 
+              style={styles.secondary} 
+              onClick={handleDegusterClick}
+            >
+              Géopolitique (Gérard)
+            </Link>
+          </div>
+          
+          <p style={styles.counterText}>
+            Déjà {clickCount} disciples pré-incubés pour l'exam
+          </p>
         </div>
       </section>
     </main>
@@ -34,67 +63,94 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     background: "linear-gradient(135deg, #f8f5ec, #f3ebd8)",
-    padding: "32px",
+    padding: "20px",
   },
   card: {
-    maxWidth: "720px",
+    maxWidth: "400px",
     width: "100%",
-    background: "#ffffff",
+    background: "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(10px)",
     border: "1px solid #e6ddc4",
-    borderRadius: "18px",
-    padding: "32px",
+    borderRadius: "24px",
+    padding: "40px 24px",
     color: "#2b2115",
     boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
   },
-  logoRow: {
+  contentColumn: {
     display: "flex",
-    gap: "16px",
+    flexDirection: "column",
     alignItems: "center",
+    gap: "24px",
+    textAlign: "center",
   },
-  badge: {
-    display: "inline-block",
-    padding: "6px 14px",
-    borderRadius: "999px",
-    background: "#f1e3bd",
-    color: "#8a6a1c",
-    fontSize: "13px",
-    margin: "0 0 6px",
-    fontWeight: 600,
+  textCenter: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
   },
   title: {
-    fontSize: "30px",
+    fontSize: "32px",
     margin: "0",
+    fontWeight: "800",
+    color: "#2b2115",
   },
-  subtitle: {
-    margin: "16px 0 28px",
+  subtitleSmall: {
+    fontSize: "16px",
+    color: "#8a6a1c",
+    fontWeight: "600",
+    margin: "0",
+    textTransform: "uppercase",
+    letterSpacing: "1px",
+  },
+  description: {
+    margin: "8px 0 0",
     color: "#574834",
-    lineHeight: 1.6,
+    fontSize: "15px",
+    lineHeight: 1.5,
   },
   actions: {
+    width: "100%",
     display: "flex",
-    gap: "12px",
-    flexWrap: "wrap",
+    flexDirection: "column", // Stack buttons vertically
+    gap: "12px", // Add space between buttons
+    justifyContent: "center",
+    marginTop: "10px",
   },
   primary: {
-    padding: "13px 18px",
+    display: "block",
+    width: "100%",
+    padding: "16px 24px",
     background: "linear-gradient(135deg, #e6c97f, #cfa945)",
     color: "#2b2115",
-    borderRadius: "12px",
+    borderRadius: "99px",
     textDecoration: "none",
-    fontWeight: 700,
+    fontWeight: 800,
+    fontSize: "18px",
     border: "1px solid #cfa945",
     boxShadow: "0 10px 25px rgba(207,169,69,0.3)",
+    textAlign: "center",
+    transition: "transform 0.2s",
   },
   secondary: {
-    padding: "13px 18px",
-    background: "#f7f2e5",
-    color: "#2b2115",
-    borderRadius: "12px",
+    display: "block",
+    width: "100%",
+    padding: "16px 24px",
+    background: "linear-gradient(135deg, #e6e9f0, #eef1f5)",
+    color: "#4b5563",
+    borderRadius: "99px",
     textDecoration: "none",
     fontWeight: 700,
-    border: "1px solid #e6ddc4",
+    fontSize: "18px",
+    border: "1px solid #d1d5db",
+    boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
+    textAlign: "center",
+    transition: "transform 0.2s",
+  },
+  counterText: {
+    fontSize: "12px",
+    color: "#9ca3af",
+    margin: "0",
   },
 };
 
 export default HomePage;
-

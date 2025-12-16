@@ -10,9 +10,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
-const pdfDir = path.join(projectRoot, "assets", "cours");
+const pdfBaseDir = path.join(projectRoot, "assets", "cours");
 const vectorsDir = path.join(projectRoot, "vectors");
-const indexPath = path.join(vectorsDir, "index.json");
 
 const EMBEDDING_MODEL = "models/text-embedding-004";
 const MIN_TOKENS = 400;
@@ -43,18 +42,80 @@ function chunkText(text) {
 }
 
 async function embedChunk(client, text, id) {
-  const res = await client.models.embedContent({
-    model: EMBEDDING_MODEL,
-    contents: [text],
-  });
-  const embedding =
-    res?.embedding?.values ||
-    res?.embeddings?.[0]?.values ||
-    null;
-  if (!embedding) {
-    throw new Error(`Embedding manquant pour ${id}`);
+  try {
+    const res = await client.models.embedContent({
+      model: EMBEDDING_MODEL,
+      contents: [text],
+    });
+    const embedding =
+      res?.embedding?.values ||
+      res?.embeddings?.[0]?.values ||
+      null;
+    if (!embedding) {
+      throw new Error(`Embedding manquant pour ${id}`);
+    }
+    return embedding;
+  } catch (error) {
+    console.error(`Erreur embedding pour ${id}:`, error.message);
+    // Retry logic simple could be added here, but throwing for now
+    throw error;
   }
-  return embedding;
+}
+
+async function processDirectory(client, dirName) {
+  const dirPath = path.join(pdfBaseDir, dirName);
+  const outputPath = path.join(vectorsDir, `${dirName}.json`);
+  
+  console.log(`\n📂 Traitement du dossier : ${dirName}`);
+  
+  if (!await fs.pathExists(dirPath)) {
+    console.warn(`Dossier introuvable : ${dirPath}`);
+    return;
+  }
+
+  const files = (await fs.readdir(dirPath)).filter((f) =>
+    f.toLowerCase().endsWith(".pdf")
+  );
+
+  if (!files.length) {
+    console.warn(`Aucun PDF trouvé dans ${dirName}`);
+    await fs.writeJson(outputPath, [], { spaces: 2 });
+    return;
+  }
+
+  const index = [];
+
+  for (const file of files) {
+    const fullPath = path.join(dirPath, file);
+    console.log(`  → Lecture ${file}`);
+    try {
+      const buffer = await fs.readFile(fullPath);
+      const parsed = await pdf(buffer);
+      const rawText = parsed.text.replace(/\s+\n/g, "\n").replace(/\n{2,}/g, "\n");
+      const chunks = chunkText(rawText);
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunkText = chunks[i].trim();
+        if (!chunkText) continue;
+        const id = `${path.parse(file).name}::${i}`;
+        // console.log(`     Embedding chunk ${i + 1}/${chunks.length}`); // Moins verbeux
+        process.stdout.write("."); // Indicateur de progression minimal
+        const embedding = await embedChunk(client, chunkText, id);
+        index.push({
+          id,
+          file,
+          text: chunkText,
+          embedding,
+        });
+      }
+      console.log(""); // Nouvelle ligne après les points
+    } catch (err) {
+      console.error(`  ❌ Erreur lecture fichier ${file}:`, err.message);
+    }
+  }
+
+  await fs.writeJson(outputPath, index, { spaces: 2 });
+  console.log(`✅ Index généré pour ${dirName} : ${index.length} chunks -> ${outputPath}`);
 }
 
 async function build() {
@@ -66,46 +127,22 @@ async function build() {
 
   await fs.ensureDir(vectorsDir);
 
-  const files = (await fs.readdir(pdfDir)).filter((f) =>
-    f.toLowerCase().endsWith(".pdf")
-  );
-  if (!files.length) {
-    console.warn("Aucun PDF trouvé dans", pdfDir);
-    await fs.writeJson(indexPath, [], { spaces: 2 });
-    return;
+  // Détecter les sous-dossiers dans assets/cours
+  const entries = await fs.readdir(pdfBaseDir, { withFileTypes: true });
+  const directories = entries.filter(dirent => dirent.isDirectory()).map(dirent => dirent.name);
+
+  if (directories.length === 0) {
+    console.warn("⚠️ Aucun sous-dossier trouvé dans assets/cours. Veuillez organiser les PDF par matière (ex: entrepreneurship/, geopo/).");
+    // Fallback: Si des PDF sont à la racine, on pourrait les traiter comme 'default' ou 'entrepreneurship' par défaut ?
+    // Pour l'instant, on suppose que l'utilisateur a suivi la consigne.
   }
 
-  const index = [];
-
-  for (const file of files) {
-    const fullPath = path.join(pdfDir, file);
-    console.log(`→ Lecture ${file}`);
-    const buffer = await fs.readFile(fullPath);
-    const parsed = await pdf(buffer);
-    const rawText = parsed.text.replace(/\s+\n/g, "\n").replace(/\n{2,}/g, "\n");
-    const chunks = chunkText(rawText);
-
-    for (let i = 0; i < chunks.length; i++) {
-      const chunkText = chunks[i].trim();
-      if (!chunkText) continue;
-      const id = `${path.parse(file).name}::${i}`;
-      console.log(`   Embedding chunk ${i + 1}/${chunks.length}`);
-      const embedding = await embedChunk(client, chunkText, id);
-      index.push({
-        id,
-        file,
-        text: chunkText,
-        embedding,
-      });
-    }
+  for (const dir of directories) {
+    await processDirectory(client, dir);
   }
-
-  await fs.writeJson(indexPath, index, { spaces: 2 });
-  console.log(`Index généré : ${index.length} chunks -> ${indexPath}`);
 }
 
 build().catch((err) => {
   console.error("Échec build_kb:", err);
   process.exit(1);
 });
-
