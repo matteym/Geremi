@@ -43,7 +43,7 @@ function HomePage() {
               style={styles.secondary} 
               onClick={handleDegusterClick}
             >
-              Géopolitique (Gérard)
+              Géopolitique (Bosher)
             </Link>
           </div>
           

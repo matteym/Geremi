@@ -9,11 +9,10 @@ function ChatWindow() {
   const topic = location.state?.topic || "entrepreneurship";
   const isGeopo = topic === "geopo";
 
-  const agentName = isGeopo ? "Gérard" : "Geremi 0.3";
+  const agentName = isGeopo ? "Bosher" : "Geremi 0.3";
   const agentSubtitle = isGeopo ? "Expert en Géopolitique" : "Votre tuteur IA";
-  const loadingText = isGeopo ? "Gérard analyse la situation..." : "Geremi pré-incube une réponse...";
   const initialMessage = isGeopo 
-    ? "Bonjour. Je suis Gérard. Prêt à analyser les enjeux géopolitiques (BRICS, Énergie, etc.). Posez votre question."
+    ? "Bonjour. Je suis Bosher. Prêt à analyser les enjeux géopolitiques (BRICS, Énergie, etc.). Posez votre question."
     : "Alright ! Pose-moi tes questions sur le cours, je suis ready !";
 
   const [messages, setMessages] = useState([
@@ -24,6 +23,9 @@ function ChatWindow() {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null); // Ref pour le scroll auto
 
+  // État pour le texte de chargement dynamique
+  const [loadingText, setLoadingText] = useState("");
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -31,6 +33,28 @@ function ChatWindow() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, loading]); // Scroll à chaque nouveau message ou loading
+
+  // Gestion de l'animation du texte de chargement
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      if (isGeopo) {
+        setLoadingText("Bosher est en train d'écrire...");
+        interval = setInterval(() => {
+          setLoadingText((prev) => 
+            prev === "Bosher est en train d'écrire..." 
+              ? "suit la trame du cours, pas de paradoxes..." 
+              : "Bosher est en train d'écrire..."
+          );
+        }, 3000); // Change toutes les 3 secondes
+      } else {
+        setLoadingText("Geremi pré-incube une réponse...");
+      }
+    } else {
+      setLoadingText("");
+    }
+    return () => clearInterval(interval);
+  }, [loading, isGeopo]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -60,7 +84,7 @@ function ChatWindow() {
   return (
     <section style={styles.wrapper} className="chat-wrapper">
       <header style={styles.header}>
-        <Logo size={90} imageSrc={isGeopo ? "/gerard.jpg" : undefined} />
+        <Logo size={90} imageSrc={isGeopo ? "/Bosher.jpg" : undefined} />
         <div>
           <p style={{...styles.badge, background: isGeopo ? "#dbeafe" : "#f1e3bd", color: isGeopo ? "#1e40af" : "#8a6a1c" }}>
             Accès validé
