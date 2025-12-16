@@ -52,13 +52,16 @@ function MessageBubble({ role, text }) {
   const isUser = role === "user";
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const utteranceRef = useRef(null);
+  
+  // Utiliser une ref pour stocker l'état global de la lecture en cours (pour ce composant)
+  const speakingRef = useRef(false);
 
   // Arrêter la lecture si le composant est démonté
   useEffect(() => {
     return () => {
-      // On n'arrête pas forcément tout le synthétiseur global car l'utilisateur peut vouloir continuer à écouter en scrollant
-      // Mais pour éviter les fuites mémoire ou états incohérents, on peut reset l'état local
+      if (speakingRef.current) {
+        window.speechSynthesis.cancel();
+      }
     };
   }, []);
 
@@ -79,6 +82,9 @@ function MessageBubble({ role, text }) {
 
     // Nouvelle lecture
     synth.cancel(); // On coupe ce qui parlait avant
+    setIsPlaying(true);
+    setIsPaused(false);
+    speakingRef.current = true;
 
     // Nettoyage sommaire du markdown pour la lecture
     const cleanText = String(text)
@@ -86,42 +92,59 @@ function MessageBubble({ role, text }) {
       .replace(/###/g, "") // Enlever les titres
       .replace(/[\-\*]\s/g, ""); // Enlever les puces
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = "fr-FR";
-    utterance.rate = 1.5; // Plus rapide et dynamique
-    utterance.pitch = 1.0; // Ton normal
+    // DÉCOUPAGE EN PHRASES POUR ÉVITER LES LIMITES DE TAILLE
+    // On découpe sur les points, points d'interrogation, exclamation, ou sauts de ligne
+    const sentences = cleanText.match(/[^.!?\n]+[.!?\n]+/g) || [cleanText];
 
-    // Essayer de trouver une voix masculine française de qualité supérieure
-    const voices = synth.getVoices();
-    // On cherche d'abord spécifiquement "Google français" ou "Google French"
-    const googleVoice = voices.find(v => v.name.includes("Google") && (v.name.includes("français") || v.name.includes("Français") || v.name.includes("French")));
-    // Sinon une voix Premium/Enhanced
-    const premiumVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Premium") || v.name.includes("Enhanced")));
-    // Sinon une voix masculine standard
-    const maleVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Thomas") || v.name.includes("Male")));
-    
-    if (googleVoice) {
-      utterance.voice = googleVoice;
-    } else if (premiumVoice) {
-      utterance.voice = premiumVoice;
-    } else if (maleVoice) {
-      utterance.voice = maleVoice;
-    }
+    let sentenceIndex = 0;
 
-    utterance.onend = () => {
-      setIsPlaying(false);
-      setIsPaused(false);
+    const speakNextSentence = () => {
+      if (sentenceIndex >= sentences.length) {
+        setIsPlaying(false);
+        setIsPaused(false);
+        speakingRef.current = false;
+        return;
+      }
+
+      const sentenceText = sentences[sentenceIndex].trim();
+      if (!sentenceText) {
+        sentenceIndex++;
+        speakNextSentence();
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(sentenceText);
+      utterance.lang = "fr-FR";
+      utterance.rate = 1.5; 
+      utterance.pitch = 1.0;
+
+      // Choix de la voix (le même qu'avant)
+      const voices = synth.getVoices();
+      const googleVoice = voices.find(v => v.name.includes("Google") && (v.name.includes("français") || v.name.includes("Français") || v.name.includes("French")));
+      const premiumVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Premium") || v.name.includes("Enhanced")));
+      const maleVoice = voices.find(v => v.lang.includes("fr") && (v.name.includes("Thomas") || v.name.includes("Male")));
+      
+      if (googleVoice) utterance.voice = googleVoice;
+      else if (premiumVoice) utterance.voice = premiumVoice;
+      else if (maleVoice) utterance.voice = maleVoice;
+
+      utterance.onend = () => {
+        sentenceIndex++;
+        // Petite pause naturelle entre les phrases
+        // setTimeout(speakNextSentence, 50); // Pas nécessaire car onend est asynchrone, mais direct c'est bien
+        speakNextSentence();
+      };
+
+      utterance.onerror = (e) => {
+        console.error("Speech error", e);
+        setIsPlaying(false);
+        speakingRef.current = false;
+      };
+
+      synth.speak(utterance);
     };
 
-    utterance.onerror = () => {
-      setIsPlaying(false);
-      setIsPaused(false);
-    };
-
-    utteranceRef.current = utterance;
-    synth.speak(utterance);
-    setIsPlaying(true);
-    setIsPaused(false);
+    speakNextSentence();
   };
 
   return (
