@@ -171,28 +171,46 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
       console.error(`Erreur Gemini (tentative ${attempts+1}/${maxAttempts}):`, error.message);
       
       // FALLBACK : Si le modèle Pro plante (ou timeout), on tente le Flash immédiatement
-      if (MODEL_NAME.includes("pro")) {
+      // On le tente à chaque fois qu'il y a une erreur sur Pro, pas juste au dernier essai
+      if (MODEL_NAME.includes("pro") || MODEL_NAME.includes("gemini-1.5-pro")) {
         console.warn("⚠️ Fallback sur Gemini 1.5 Flash !");
         try {
            const fallbackResult = await client.models.generateContent({
-            model: "models/gemini-1.5-flash",
+            model: "gemini-1.5-flash", // Utiliser l'alias court ou "models/gemini-1.5-flash"
             contents: [{ role: "user", parts: [{ text: prompt }] }],
           });
           
+          const fallbackAnswer = 
+            fallbackResult?.text ?? 
+            fallbackResult?.candidates?.[0]?.content?.parts?.[0]?.text ?? 
+            "Pas de réponse (Flash).";
+
           return {
-            answer: (fallbackResult?.text ?? fallbackResult?.candidates?.[0]?.content?.parts?.[0]?.text ?? "Pas de réponse.").trim(),
+            answer: fallbackAnswer.trim(),
             context: top,
             topic: safeTopic
           };
         } catch (fallbackError) {
            console.error("❌ Fallback Flash échoué aussi:", fallbackError.message);
+           // On continue la boucle de retry si Flash échoue aussi
         }
       }
 
       attempts++;
-      if (attempts >= maxAttempts) throw error;
+      if (attempts >= maxAttempts) {
+        // Au lieu de thrower une erreur brute qui fait 500, on retourne une réponse d'erreur propre
+        return {
+            answer: "Désolé, je suis surchargé actuellement. Réessayez dans quelques secondes.",
+            context: [],
+            topic: safeTopic,
+            error: error.message
+        };
+      }
       // Backoff plus court
       await new Promise(res => setTimeout(res, 500 * Math.pow(2, attempts)));
     }
   }
+  // Fallback ultime si boucle finie sans return (théoriquement impossible avec le return dans le catch)
+  return { answer: "Erreur technique.", context: [], topic: safeTopic };
+}
 }
