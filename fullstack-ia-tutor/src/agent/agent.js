@@ -4,7 +4,7 @@ import { loadIndex, semanticSearch } from "./rag.js";
 
 dotenv.config();
 
-const MODEL_NAME = process.env.GEMINI_MODEL || "models/gemini-1.5-flash";
+const MODEL_NAME = process.env.GEMINI_MODEL || "models/gemini-1.5-pro"; // Passage au modèle Pro pour plus de qualité
 const EMBED_MODEL = "models/text-embedding-004";
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -132,7 +132,7 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
 
   // 2. Recherche sémantique dans le bon index
   // On réduit le topK de 40 à 25 pour optimiser la vitesse
-  const top = semanticSearch(queryEmbedding, 25, safeTopic);
+  const top = semanticSearch(queryEmbedding, 40, safeTopic);
 
   // 3. Construction du prompt avec historique
   const prompt = buildPrompt(question, top, safeTopic, history);
@@ -144,10 +144,23 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
   
   while (attempts < maxAttempts) {
     try {
-      const result = await client.models.generateContent({
+      // Ajout d'un Timeout de 10 secondes pour ne pas attendre indéfiniment
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes max
+
+      // Note: GoogleGenAI SDK ne supporte pas directement AbortSignal dans generateContent 
+      // mais on peut utiliser Promise.race pour simuler le timeout
+      const generatePromise = client.models.generateContent({
         model: MODEL_NAME,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
       });
+
+      const result = await Promise.race([
+        generatePromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Gemini (10s)")), 10000))
+      ]);
+      
+      clearTimeout(timeoutId);
 
       const answer =
         result?.text ??
