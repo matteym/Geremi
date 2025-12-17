@@ -140,16 +140,13 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
   // 4. Appel à Gemini
   // Retry logic basique pour gérer les 503
   let attempts = 0;
-  const maxAttempts = 2; // Réduit pour échouer plus vite au lieu de bloquer 30min
+  const maxAttempts = 2; // Réduit pour échouer plus vite
   
   while (attempts < maxAttempts) {
     try {
-      // Ajout d'un Timeout de 10 secondes pour ne pas attendre indéfiniment
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes max
-
-      // Note: GoogleGenAI SDK ne supporte pas directement AbortSignal dans generateContent 
-      // mais on peut utiliser Promise.race pour simuler le timeout
+      // 25 secondes de timeout pour Gemini 1.5 Pro
+      const TIMEOUT_MS = 25000;
+      
       const generatePromise = client.models.generateContent({
         model: MODEL_NAME,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -157,11 +154,9 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
 
       const result = await Promise.race([
         generatePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Gemini (10s)")), 10000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout Gemini (${TIMEOUT_MS}ms)`)), TIMEOUT_MS))
       ]);
       
-      clearTimeout(timeoutId);
-
       const answer =
         result?.text ??
         result?.candidates?.[0]?.content?.parts?.[0]?.text ??
@@ -173,10 +168,30 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
         topic: safeTopic
       };
     } catch (error) {
+      console.error(`Erreur Gemini (tentative ${attempts+1}/${maxAttempts}):`, error.message);
+      
+      // FALLBACK : Si le modèle Pro plante (ou timeout), on tente le Flash immédiatement
+      if (MODEL_NAME.includes("pro")) {
+        console.warn("⚠️ Fallback sur Gemini 1.5 Flash !");
+        try {
+           const fallbackResult = await client.models.generateContent({
+            model: "models/gemini-1.5-flash",
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+          });
+          
+          return {
+            answer: (fallbackResult?.text ?? fallbackResult?.candidates?.[0]?.content?.parts?.[0]?.text ?? "Pas de réponse.").trim(),
+            context: top,
+            topic: safeTopic
+          };
+        } catch (fallbackError) {
+           console.error("❌ Fallback Flash échoué aussi:", fallbackError.message);
+        }
+      }
+
       attempts++;
-      console.error(`Erreur Gemini (tentative ${attempts}/${maxAttempts}):`, error.message);
       if (attempts >= maxAttempts) throw error;
-      // Backoff plus court (500ms * 2^attempts) -> 1s max
+      // Backoff plus court
       await new Promise(res => setTimeout(res, 500 * Math.pow(2, attempts)));
     }
   }
