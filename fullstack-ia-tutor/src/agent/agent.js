@@ -131,9 +131,8 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
   const queryEmbedding = await embedQuery(question);
 
   // 2. Recherche sémantique dans le bon index
-  // On augmente drastiquement le topK (de 12 à 40) pour s'assurer qu'il a TOUT le contexte
-  // Gemini 1.5 Flash a une fenêtre de 1M tokens, donc aucun risque de surcharge.
-  const top = semanticSearch(queryEmbedding, 40, safeTopic);
+  // On réduit le topK de 40 à 25 pour optimiser la vitesse
+  const top = semanticSearch(queryEmbedding, 25, safeTopic);
 
   // 3. Construction du prompt avec historique
   const prompt = buildPrompt(question, top, safeTopic, history);
@@ -141,7 +140,7 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
   // 4. Appel à Gemini
   // Retry logic basique pour gérer les 503
   let attempts = 0;
-  const maxAttempts = 3;
+  const maxAttempts = 2; // Réduit pour échouer plus vite au lieu de bloquer 30min
   
   while (attempts < maxAttempts) {
     try {
@@ -164,8 +163,8 @@ export async function askQuestion(question, topic = "entrepreneurship", history 
       attempts++;
       console.error(`Erreur Gemini (tentative ${attempts}/${maxAttempts}):`, error.message);
       if (attempts >= maxAttempts) throw error;
-      // Attendre un peu avant de réessayer (backoff exponentiel)
-      await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempts)));
+      // Backoff plus court (500ms * 2^attempts) -> 1s max
+      await new Promise(res => setTimeout(res, 500 * Math.pow(2, attempts)));
     }
   }
 }
